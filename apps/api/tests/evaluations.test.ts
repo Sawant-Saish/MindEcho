@@ -46,6 +46,17 @@ describe('Evaluations API (Phase 4)', () => {
     const session = await registerTestUser(app, { email: 'eval-voice@test.com' })
     const note = await createTestNote(app, session)
 
+    await app.inject({
+      method: 'POST',
+      url: '/api/v1/subscriptions/checkout',
+      headers: { authorization: `Bearer ${session.token}` },
+      payload: {
+        planId: 'pro',
+        billingCycle: 'monthly',
+        paymentToken: 'tok_mock_card_1234',
+      },
+    })
+
     const result = await submitFeynmanEvaluation(session.user.id, {
       noteId: note.id,
       mode: 'voice',

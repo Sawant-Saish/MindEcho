@@ -8,6 +8,10 @@ import { fromPublicEvalId, toPublicEvalId } from '../../shared/utils/eval-id.js'
 import { fromPublicNoteId, toPublicNoteId } from '../../shared/utils/note-id.js'
 import { fromPublicUserId } from '../../shared/utils/user-id.js'
 import { applyReviewAfterEvaluation } from '../analytics/spaced-repetition.service.js'
+import {
+  assertCanEvaluate,
+  recordEvaluationUsage,
+} from '../billing/usage-policy.service.js'
 import type { FeynmanEvaluationResponse } from './evaluations.schemas.js'
 import { serializeEvaluationDetail } from './evaluations.serializer.js'
 
@@ -57,6 +61,8 @@ export async function submitFeynmanEvaluation(
   publicUserId: string,
   input: SubmitFeynmanInput,
 ): Promise<FeynmanEvaluationResponse> {
+  await assertCanEvaluate(publicUserId, input.mode)
+
   const note = await findOwnedNote(publicUserId, input.noteId)
   const user = await User.findById(fromPublicUserId(publicUserId))
 
@@ -137,6 +143,8 @@ export async function submitFeynmanEvaluation(
       repetition: reviewUpdate.repetition,
     },
   })
+
+  await recordEvaluationUsage(publicUserId)
 
   return {
     evaluationId: toPublicEvalId(evaluation._id),

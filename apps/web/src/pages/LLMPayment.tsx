@@ -1,27 +1,66 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft, CreditCard } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { GlassCard } from '../components/GlassCard'
 import { Navbar } from '../components/Navbar'
 import { PricingSection } from '../components/ui/pricing'
 import { ShinyButton } from '../components/ui/shiny-button'
 import { useAuth } from '../context/AuthContext'
+import { useApi as apiEnabled } from '../lib/api/client'
+import * as subscriptionsApi from '../lib/api/subscriptions.api'
 
 export function LLMPayment() {
   const { isAuthenticated } = useAuth()
+  const useApiMode = apiEnabled
   const [selectedPlan, setSelectedPlan] = useState('pro')
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(useApiMode)
+
+  useEffect(() => {
+    if (!useApiMode || !isAuthenticated) {
+      setLoading(false)
+      return
+    }
+
+    subscriptionsApi
+      .fetchCurrentSubscription()
+      .then((subscription) => {
+        setSelectedPlan(subscription.planId)
+        setBillingCycle(subscription.billingCycle)
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false))
+  }, [isAuthenticated, useApiMode])
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
-  const handleSelectPlan = (planId: string) => {
+  const handleSelectPlan = async (planId: string) => {
     setSelectedPlan(planId)
-    localStorage.setItem('memoroute_llm_plan', planId)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    setError(null)
+
+    if (!useApiMode) {
+      localStorage.setItem('memoroute_llm_plan', planId)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+      return
+    }
+
+    try {
+      await subscriptionsApi.checkoutSubscription({
+        planId,
+        billingCycle,
+        paymentToken: 'tok_mock_card_1234',
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (checkoutError) {
+      setError(checkoutError instanceof Error ? checkoutError.message : 'Checkout failed')
+    }
   }
 
   const plans = [
@@ -103,10 +142,43 @@ export function LLMPayment() {
           </div>
 
           <p className="text-xs text-white/60 mb-6">
-            Enter payment credentials below to activate your plan. In development mode, clicking Save Plan Selection updates local storage.
+            {useApiMode
+              ? 'Checkout uses the mock payment provider in development. Select a plan and confirm to activate it on your account.'
+              : 'Enter payment credentials below to activate your plan. In development mode, clicking Save Plan Selection updates local storage.'}
           </p>
 
-          <form onSubmit={(e) => { e.preventDefault(); handleSelectPlan(selectedPlan); }} className="space-y-4">
+          <div className="mb-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setBillingCycle('monthly')}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                billingCycle === 'monthly'
+                  ? 'bg-[#e8c89b] text-[#1e1917]'
+                  : 'bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingCycle('annual')}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                billingCycle === 'annual'
+                  ? 'bg-[#e8c89b] text-[#1e1917]'
+                  : 'bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              Annual
+            </button>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleSelectPlan(selectedPlan)
+            }}
+            className="space-y-4"
+          >
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#e8c89b]">
                 Card Number
@@ -144,6 +216,12 @@ export function LLMPayment() {
               </div>
             </div>
 
+            {error && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/15 p-3 text-center text-xs font-semibold text-red-300">
+                {error}
+              </div>
+            )}
+
             {saved && (
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
@@ -156,7 +234,13 @@ export function LLMPayment() {
 
             <ShinyButton
               type="submit"
-              label={saved ? 'Plan Saved' : 'Confirm & Save Plan Selection'}
+              label={
+                loading
+                  ? 'Loading plan...'
+                  : saved
+                    ? 'Plan Saved'
+                    : 'Confirm & Save Plan Selection'
+              }
               accentColor="#e8c89b"
               accentSoftColor="#f5efe8"
               fillColor="#2b2421"

@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { authGuard } from '../../shared/middleware/auth-guard.js'
+import { usageLimitGuard } from '../../shared/middleware/usage-limit-guard.js'
 import { validateBody } from '../../shared/middleware/validate-body.js'
 import { ApiError } from '../../shared/utils/api-error.js'
 import { feynmanJsonBodySchema, type FeynmanJsonBody } from './evaluations.schemas.js'
@@ -74,6 +75,7 @@ export async function evaluationsRoutes(app: FastifyInstance): Promise<void> {
     {
       preHandler: [
         authGuard,
+        usageLimitGuard,
         async (request, reply) => {
           if (!request.isMultipart()) {
             await validateBody(feynmanJsonBodySchema)(request, reply)

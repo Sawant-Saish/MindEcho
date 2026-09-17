@@ -670,11 +670,11 @@ UsageRecordSchema.index({ userId: 1, type: 1, date: 1 }, { unique: true });
 
 ### Tasks
 
-- [ ] `PaymentProvider` port with `MockPaymentProvider` (dev) and `StripeProvider` (prod).
-- [ ] Checkout creates/updates subscription; returns PRODUCT.md response shape.
-- [ ] Usage middleware on `POST /evaluations/feynman` — check daily limits.
-- [ ] Webhook handler: `POST /api/v1/webhooks/stripe` for payment events.
-- [ ] Default new users to `starter` plan.
+- [x] `PaymentProvider` port with `MockPaymentProvider` (dev) and `StripeProvider` (prod).
+- [x] Checkout creates/updates subscription; returns PRODUCT.md response shape.
+- [x] Usage middleware on `POST /evaluations/feynman` — check daily limits.
+- [x] Webhook handler: `POST /api/v1/webhooks/stripe` for payment events.
+- [x] Default new users to `starter` plan.
 
 ### Agile hooks
 

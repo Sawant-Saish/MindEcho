@@ -9,6 +9,7 @@ import {
   signAccessToken,
 } from '../../shared/utils/tokens.js'
 import { fromPublicUserId, toPublicUserId } from '../../shared/utils/user-id.js'
+import { createStarterSubscription } from '../billing/billing.service.js'
 import type { AuthResponse, LoginBody, RegisterBody } from './auth.schemas.js'
 
 function serializeUser(user: UserDocument): AuthResponse['user'] {
@@ -54,6 +55,8 @@ export async function registerUser(input: RegisterBody): Promise<AuthResponse> {
     email,
     passwordHash: await hashPassword(input.password),
   })
+
+  await createStarterSubscription(toPublicUserId(user._id))
 
   return issueAuthResponse(user)
 }

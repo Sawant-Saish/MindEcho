@@ -13,6 +13,7 @@ import { calendarModule } from './modules/calendar/index.js'
 import { evaluationsModule } from './modules/evaluations/index.js'
 import { healthRoutes } from './modules/health/health.routes.js'
 import { notesModule } from './modules/notes/index.js'
+import { webhooksModule } from './modules/webhooks/index.js'
 import { requestContextPlugin } from './plugins/request-context.js'
 import { errorHandler } from './shared/middleware/error-handler.js'
 
@@ -47,6 +48,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(calendarModule)
   await app.register(evaluationsModule)
   await app.register(billingModule)
+  await app.register(webhooksModule)
   await app.register(analyticsModule)
 
   app.get('/api/v1', async () => ({

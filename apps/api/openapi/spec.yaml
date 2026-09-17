@@ -268,11 +268,41 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/subscriptions/plans:
+    get:
+      tags: [Subscriptions]
+      summary: List subscription plans (Phase 6)
+      responses:
+        '200':
+          description: OK
+  /api/v1/subscriptions/current:
+    get:
+      tags: [Subscriptions]
+      summary: Current subscription and usage (Phase 6)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
   /api/v1/subscriptions/checkout:
     post:
       tags: [Subscriptions]
       summary: Checkout subscription (Phase 6)
       security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/subscriptions/cancel:
+    post:
+      tags: [Subscriptions]
+      summary: Cancel subscription (Phase 6)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/webhooks/stripe:
+    post:
+      tags: [Webhooks]
+      summary: Stripe webhook handler (Phase 6)
       responses:
         '200':
           description: OK

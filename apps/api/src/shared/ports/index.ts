@@ -1,6 +1,7 @@
 import { env } from '../../config/env.js'
 import { MockLLMProvider } from './mock-llm-provider.js'
 import { MockPaymentProvider } from './mock-payment-provider.js'
+import { StripePaymentProvider } from './stripe-payment-provider.js'
 import { MockSTTProvider } from './mock-stt-provider.js'
 import type { LLMProvider } from './llm-provider.js'
 import type { PaymentProvider } from './payment-provider.js'
@@ -28,6 +29,8 @@ export function createPaymentProvider(): PaymentProvider {
   switch (env.PAYMENT_PROVIDER) {
     case 'mock':
       return new MockPaymentProvider()
+    case 'stripe':
+      return new StripePaymentProvider()
     default:
       throw new Error(`Payment provider "${env.PAYMENT_PROVIDER}" not configured yet (Phase 6)`)
   }
