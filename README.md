@@ -32,8 +32,9 @@ npm install
 # 2. Start infrastructure
 npm run docker:up
 
-# 3. Configure API (first time)
+# 3. Configure API and frontend (first time)
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env
 
 # 4. Run migrations (optional, after MongoDB is up)
 npm run migrate:up
@@ -69,8 +70,12 @@ npm run dev:all
 | 2 — Notes | ✅ Complete (CRUD + API integration) |
 | 3 — Calendar | ✅ Complete (settings + important dates) |
 | 4 — Evaluations | ✅ Complete (Feynman text/voice + mock LLM/STT) |
-| 5 — Spaced Repetition | 🔜 Next |
-| 4–8 | Planned — see [docs/phases.md](./docs/phases.md) |
+| 5 — Spaced Repetition | ✅ Complete (SM-2 + dashboard analytics) |
+| 6 — Billing | ✅ Complete (plans, checkout, usage limits) |
+| 7 — Frontend Integration | ✅ Complete (`VITE_USE_API` cutover) |
+| 8 | Planned — see [docs/phases.md](./docs/phases.md) |
+
+Set `VITE_USE_API=true` in `apps/web/.env` to use the live API instead of localStorage demo mode.
 
 ## Documentation
 

@@ -747,14 +747,14 @@ export async function api<T>(path: string, options?: RequestInit): Promise<T> {
 
 ### Tasks
 
-- [ ] Add `VITE_API_URL` and `VITE_USE_API` to frontend `.env`.
-- [ ] Store JWT in `localStorage` as `memoroute_token` (or httpOnly cookie if same-origin).
-- [ ] Update `AuthContext` to call register/login APIs.
-- [ ] Update `NotesContext` methods to call backend; keep optimistic UI updates.
-- [ ] Update `NewConcept.tsx` to POST multipart evaluation.
-- [ ] Update `LLMPayment.tsx` to call checkout API.
-- [ ] Add loading/error states to all pages.
-- [ ] Remove or gate localStorage writes behind `!USE_API`.
+- [x] Add `VITE_API_URL` and `VITE_USE_API` to frontend `.env`.
+- [x] Store JWT in `localStorage` as `memoroute_token` (or httpOnly cookie if same-origin).
+- [x] Update `AuthContext` to call register/login APIs.
+- [x] Update `NotesContext` methods to call backend; keep optimistic UI updates.
+- [x] Update `NewConcept.tsx` to POST multipart evaluation.
+- [x] Update `LLMPayment.tsx` to call checkout API.
+- [x] Add loading/error states to all pages.
+- [x] Remove or gate localStorage writes behind `!USE_API`.
 
 ### Agile hooks
 

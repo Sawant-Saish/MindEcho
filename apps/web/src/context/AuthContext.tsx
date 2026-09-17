@@ -11,6 +11,7 @@ import {
   fetchCurrentUser,
   loginRequest,
   logoutRequest,
+  registerRequest,
   type AuthUser,
 } from '../lib/api/auth.api'
 import { useApi } from '../lib/api/client'
@@ -20,6 +21,7 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
+  register: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
 }
 
@@ -75,6 +77,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, [])
 
+  const register = useCallback(async (name: string, email: string, password: string) => {
+    if (!name.trim() || !email.trim() || !password.trim()) return false
+
+    if (useApi) {
+      try {
+        const response = await registerRequest(name.trim(), email.trim(), password)
+        persistSession(response)
+        setUser(response.user)
+        return true
+      } catch {
+        return false
+      }
+    }
+
+    const nextUser: AuthUser = {
+      id: `demo_${Date.now()}`,
+      name: name.trim(),
+      email: email.trim(),
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser))
+    setUser(nextUser)
+    return true
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     if (!email.trim() || !password.trim()) return false
 
@@ -121,9 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
+      register,
       logout,
     }),
-    [user, isLoading, login, logout],
+    [user, isLoading, login, register, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

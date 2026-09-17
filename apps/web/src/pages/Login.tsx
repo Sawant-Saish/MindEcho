@@ -6,12 +6,14 @@ import { useAuth } from '../context/AuthContext'
 import { ShinyButton } from '../components/ui/shiny-button'
 
 export function Login() {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,13 +21,20 @@ export function Login() {
     setError('')
     setIsSubmitting(true)
 
-    const ok = await login(email, password)
+    const ok =
+      mode === 'register'
+        ? await register(name, email, password)
+        : await login(email, password)
     setIsSubmitting(false)
 
     if (ok) {
       navigate('/dashboard', { replace: true })
     } else {
-      setError('Invalid email or password. Please try again.')
+      setError(
+        mode === 'register'
+          ? 'Could not create your account. Check your details and try again.'
+          : 'Invalid email or password. Please try again.',
+      )
     }
   }
 
@@ -52,13 +61,57 @@ export function Login() {
         </Link>
 
         <h1 className="mb-2 text-center text-2xl font-bold text-white">
-          Welcome back
+          {mode === 'login' ? 'Welcome back' : 'Create your account'}
         </h1>
         <p className="mb-8 text-center text-sm text-white/60">
-          Sign in to continue your learning journey
+          {mode === 'login'
+            ? 'Sign in to continue your learning journey'
+            : 'Register to start practicing with LECTOR AI'}
         </p>
 
+        <div className="mb-6 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('login')}
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+              mode === 'login'
+                ? 'bg-[#e8c89b] text-[#1e1917]'
+                : 'bg-white/10 text-white/70 hover:text-white'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('register')}
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+              mode === 'register'
+                ? 'bg-[#e8c89b] text-[#1e1917]'
+                : 'bg-white/10 text-white/70 hover:text-white'
+            }`}
+          >
+            Register
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5">
+          {mode === 'register' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-white/80">
+                Name
+              </label>
+              <div className="glass flex items-center gap-3 rounded-2xl px-4 py-3">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full bg-transparent text-sm text-white placeholder:text-white/40 outline-none"
+                />
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="mb-2 block text-sm font-medium text-white/80">
               Email
@@ -108,7 +161,15 @@ export function Login() {
 
           <ShinyButton
             type="submit"
-            label={isSubmitting ? 'Signing in…' : 'Sign In →'}
+            label={
+              isSubmitting
+                ? mode === 'register'
+                  ? 'Creating account…'
+                  : 'Signing in…'
+                : mode === 'register'
+                  ? 'Create Account →'
+                  : 'Sign In →'
+            }
             accentColor="#e8c89b"
             accentSoftColor="#f5efe8"
             fillColor="#2b2421"

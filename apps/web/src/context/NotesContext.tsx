@@ -635,6 +635,10 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       audioBlob?: Blob
       selfRating?: number
     }) => {
+      if (!useApi) {
+        throw new Error('Feynman evaluation API is only available when VITE_USE_API=true')
+      }
+
       const result =
         input.mode === 'voice' && input.audioBlob
           ? await evaluationsApi.submitVoiceEvaluation({
