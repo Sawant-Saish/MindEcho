@@ -1,44 +1,77 @@
-# MemoRoute
+# LECTOR (MindEcho)
 
-Adaptive Spaced Retention Learning System — frontend for SIH 2026 (Team: All Six Not Found).
+AI-powered cognitive learning platform — Feynman technique evaluation + adaptive spaced repetition.
 
-MemoRoute helps learners truly understand, retain, and perform better using LECTOR LLM comprehension scoring and personalized spaced repetition.
+**SIH 2026** — Team: All Six Not Found
 
-## Stack
+## Monorepo structure
 
-- React + TypeScript
-- Vite
-- Tailwind CSS v4
-- Framer Motion
-- React Router
-
-## Run locally
-
-```bash
-npm install
-npm run dev
+```
+lector/
+├── apps/
+│   ├── web/                 # React 19 + Vite frontend
+│   └── api/                 # Fastify + MongoDB backend
+├── docs/
+│   ├── PRODUCT.md           # Product & API contracts
+│   └── phases.md            # Backend development phases
+├── docker-compose.yml       # MongoDB, Redis, MinIO
+└── package.json             # npm workspaces root
 ```
 
-Open [http://localhost:43123](http://localhost:43123).
+## Prerequisites
 
-## Pages
+- Node.js 20+
+- Docker (for MongoDB, Redis, MinIO)
 
-| Route | Description |
-|-------|-------------|
-| `/` | Glassmorphism landing page matching the MemoRoute mockup |
-| `/login` | Login (demo — any email/password works, redirects to home) |
-| `/dashboard` | Learning dashboard placeholder (ready for integration) |
-| `/llm-payment` | LLM payment technique placeholder |
+## Quick start
 
-## Design
+```bash
+# 1. Install dependencies
+npm install
 
-- Warm beige/cream/taupe palette from the provided mockup
-- Glassmorphism: `backdrop-filter: blur()`, semi-transparent whites, soft glows
-- Animated hero character with floating glass cards
-- Fully responsive layout
+# 2. Start infrastructure
+npm run docker:up
 
-## Next steps
+# 3. Configure API (first time)
+cp apps/api/.env.example apps/api/.env
 
-- Connect dashboard to your backend API
-- Integrate real LLM payment flow
-- Wire LECTOR evaluation endpoints
+# 4. Run migrations (optional, after MongoDB is up)
+npm run migrate:up
+
+# 5. Start frontend + backend
+npm run dev:all
+```
+
+| Service | URL |
+|---------|-----|
+| Web app | http://localhost:43123 |
+| API health | http://localhost:3000/api/v1/health |
+| OpenAPI spec | http://localhost:3000/api/v1/openapi |
+| MinIO console | http://localhost:9001 |
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev:web` | Frontend only |
+| `npm run dev:api` | Backend only |
+| `npm run dev:all` | Both concurrently |
+| `npm run build` | Build all workspaces |
+| `npm run docker:up` | Start MongoDB, Redis, MinIO |
+| `npm run migrate:up` | Apply MongoDB index migrations |
+
+## Development status
+
+| Phase | Status |
+|-------|--------|
+| 0 — Foundation | ✅ Complete |
+| 1 — Auth | ✅ Complete (JWT register/login/refresh) |
+| 2 — Notes | ✅ Complete (CRUD + API integration) |
+| 3 — Calendar | ✅ Complete (settings + important dates) |
+| 4 — Evaluations | 🔜 Next |
+| 4–8 | Planned — see [docs/phases.md](./docs/phases.md) |
+
+## Documentation
+
+- [Product spec & API contracts](./docs/PRODUCT.md)
+- [Backend phase plan](./docs/phases.md)

@@ -1,0 +1,234 @@
+openapi: 3.1.0
+info:
+  title: LECTOR API
+  version: 0.1.0
+  description: Feynman evaluation & adaptive spaced repetition platform
+servers:
+  - url: http://localhost:3000
+    description: Local development
+tags:
+  - name: Health
+  - name: Auth
+  - name: Notes
+  - name: Calendar
+  - name: Evaluations
+  - name: Dashboard
+  - name: Subscriptions
+paths:
+  /api/v1/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201':
+          description: Created
+        '409':
+          description: Email already exists
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Invalid credentials
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate refresh token
+      responses:
+        '200':
+          description: OK
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke refresh token
+      responses:
+        '200':
+          description: OK
+  /api/v1/notes:
+    get:
+      tags: [Notes]
+      summary: List notes for authenticated user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: subject
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: Array of notes
+    post:
+      tags: [Notes]
+      summary: Create note
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Created
+  /api/v1/notes/{id}:
+    get:
+      tags: [Notes]
+      summary: Get single note
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Notes]
+      summary: Update note
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags: [Notes]
+      summary: Delete note
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted
+  /api/v1/evaluations/feynman:
+    post:
+      tags: [Evaluations]
+      summary: Feynman voice/text evaluation (Phase 4)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Evaluation result
+        '501':
+          description: Not implemented yet
+  /api/v1/calendar/settings:
+    get:
+      tags: [Calendar]
+      summary: Get study mode settings
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Calendar]
+      summary: Update study mode settings
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/calendar/important-dates:
+    get:
+      tags: [Calendar]
+      summary: List important dates
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Calendar]
+      summary: Create important date
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201':
+          description: Created
+  /api/v1/calendar/important-dates/{id}:
+    patch:
+      tags: [Calendar]
+      summary: Update important date
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags: [Calendar]
+      summary: Delete important date
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard aggregates (Phase 5)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/subscriptions/checkout:
+    post:
+      tags: [Subscriptions]
+      summary: Checkout subscription (Phase 6)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
