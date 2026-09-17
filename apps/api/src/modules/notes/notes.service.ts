@@ -1,4 +1,7 @@
+import { Evaluation } from '../../models/Evaluation.js'
 import { Note, type NoteDocument } from '../../models/Note.js'
+import { User } from '../../models/User.js'
+import { applyReviewAfterEvaluation } from '../analytics/spaced-repetition.service.js'
 import { ApiError } from '../../shared/utils/api-error.js'
 import { fromPublicNoteId, toPublicNoteId } from '../../shared/utils/note-id.js'
 import { fromPublicUserId } from '../../shared/utils/user-id.js'
@@ -91,6 +94,66 @@ export async function updateNote(publicUserId: string, noteId: string, input: Up
   }
 
   return serializeNote(note)
+}
+
+export async function recalculateNoteSchedule(publicUserId: string, noteId: string) {
+  const note = await findOwnedNote(publicUserId, noteId)
+  const user = await User.findById(fromPublicUserId(publicUserId))
+
+  if (!user) {
+    throw new ApiError(404, 'USER_NOT_FOUND', 'User not found')
+  }
+
+  const latestEvaluation = await Evaluation.findOne({
+    userId: fromPublicUserId(publicUserId),
+    noteId: note._id,
+  }).sort({ createdAt: -1 })
+
+  if (!latestEvaluation) {
+    throw new ApiError(
+      400,
+      'NO_EVALUATION',
+      'At least one evaluation is required before recalculating review schedule',
+    )
+  }
+
+  const reviewUpdate = applyReviewAfterEvaluation(
+    {
+      easinessFactor: note.easinessFactor,
+      interval: note.interval,
+      repetition: note.repetition,
+    },
+    {
+      lectorScore: latestEvaluation.lectorScore,
+      correctness: latestEvaluation.correctness,
+      clarity: latestEvaluation.clarity,
+      completeness: latestEvaluation.completeness,
+    },
+    {
+      studyMode: user.calendarSettings?.studyMode ?? 'exam',
+      examTargetDate: user.calendarSettings?.examTargetDate,
+    },
+  )
+
+  const updated = await Note.findByIdAndUpdate(
+    note._id,
+    {
+      $set: {
+        retentionHealth: reviewUpdate.retentionHealth,
+        nextReviewDate: reviewUpdate.nextReviewDate,
+        easinessFactor: reviewUpdate.easinessFactor,
+        interval: reviewUpdate.interval,
+        repetition: reviewUpdate.repetition,
+      },
+    },
+    { new: true },
+  )
+
+  if (!updated) {
+    throw new ApiError(404, 'NOTE_NOT_FOUND', `Note with id ${noteId} not found`)
+  }
+
+  return serializeNote(updated)
 }
 
 export async function deleteNote(publicUserId: string, noteId: string) {

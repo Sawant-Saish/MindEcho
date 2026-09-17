@@ -244,6 +244,30 @@ paths:
       responses:
         '200':
           description: OK
+  /api/v1/dashboard/due-today:
+    get:
+      tags: [Dashboard]
+      summary: Notes due for review today (Phase 5)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/dashboard/retention-health:
+    get:
+      tags: [Dashboard]
+      summary: Per-note retention health (Phase 5)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+  /api/v1/notes/{id}/recalculate:
+    post:
+      tags: [Notes]
+      summary: Recalculate SM-2 schedule from latest evaluation (Phase 5)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
   /api/v1/subscriptions/checkout:
     post:
       tags: [Subscriptions]

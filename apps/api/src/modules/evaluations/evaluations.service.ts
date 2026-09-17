@@ -7,6 +7,7 @@ import { ApiError } from '../../shared/utils/api-error.js'
 import { fromPublicEvalId, toPublicEvalId } from '../../shared/utils/eval-id.js'
 import { fromPublicNoteId, toPublicNoteId } from '../../shared/utils/note-id.js'
 import { fromPublicUserId } from '../../shared/utils/user-id.js'
+import { applyReviewAfterEvaluation } from '../analytics/spaced-repetition.service.js'
 import type { FeynmanEvaluationResponse } from './evaluations.schemas.js'
 import { serializeEvaluationDetail } from './evaluations.serializer.js'
 
@@ -21,26 +22,6 @@ export interface SubmitFeynmanInput {
 
 function formatDateOnly(date: Date): string {
   return date.toISOString().slice(0, 10)
-}
-
-function computeRetentionHealth(correctness: number, clarity: number, completeness: number): number {
-  return Math.min(100, Math.round(correctness * 0.5 + clarity * 0.3 + completeness * 0.2))
-}
-
-function computeNextReviewDays(
-  studyMode: 'exam' | 'skill',
-  examTargetDate?: Date | null,
-): number {
-  let daysAdd = 3
-
-  if (studyMode === 'exam' && examTargetDate) {
-    const todayMs = Date.now()
-    const examMs = examTargetDate.getTime()
-    const daysLeft = Math.max(1, Math.ceil((examMs - todayMs) / (1000 * 60 * 60 * 24)))
-    daysAdd = Math.max(1, Math.min(2, Math.floor(daysLeft / 3)))
-  }
-
-  return daysAdd
 }
 
 async function findOwnedNote(publicUserId: string, noteId: string): Promise<NoteDocument> {
@@ -126,17 +107,22 @@ export async function submitFeynmanEvaluation(
   }
 
   const todayStr = formatDateOnly(new Date())
-  const daysAdd = computeNextReviewDays(
-    user.calendarSettings?.studyMode ?? 'exam',
-    user.calendarSettings?.examTargetDate,
-  )
-  const nextReview = new Date()
-  nextReview.setUTCDate(nextReview.getUTCDate() + daysAdd)
-
-  const retentionHealth = computeRetentionHealth(
-    result.correctness,
-    result.clarity,
-    result.completeness,
+  const reviewUpdate = applyReviewAfterEvaluation(
+    {
+      easinessFactor: note.easinessFactor,
+      interval: note.interval,
+      repetition: note.repetition,
+    },
+    {
+      lectorScore: result.lectorScore,
+      correctness: result.correctness,
+      clarity: result.clarity,
+      completeness: result.completeness,
+    },
+    {
+      studyMode: user.calendarSettings?.studyMode ?? 'exam',
+      examTargetDate: user.calendarSettings?.examTargetDate,
+    },
   )
 
   await Note.findByIdAndUpdate(note._id, {
@@ -144,8 +130,11 @@ export async function submitFeynmanEvaluation(
       lectorScore: result.lectorScore,
       practiceCount: note.practiceCount + 1,
       lastPracticed: new Date(`${todayStr}T00:00:00.000Z`),
-      retentionHealth,
-      nextReviewDate: nextReview,
+      retentionHealth: reviewUpdate.retentionHealth,
+      nextReviewDate: reviewUpdate.nextReviewDate,
+      easinessFactor: reviewUpdate.easinessFactor,
+      interval: reviewUpdate.interval,
+      repetition: reviewUpdate.repetition,
     },
   })
 
@@ -161,8 +150,8 @@ export async function submitFeynmanEvaluation(
     updatedNoteState: {
       practiceCount: note.practiceCount + 1,
       lastPracticed: todayStr,
-      retentionHealth,
-      nextReviewDate: formatDateOnly(nextReview),
+      retentionHealth: reviewUpdate.retentionHealth,
+      nextReviewDate: formatDateOnly(reviewUpdate.nextReviewDate),
     },
   }
 }

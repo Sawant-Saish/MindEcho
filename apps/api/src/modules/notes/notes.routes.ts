@@ -15,6 +15,7 @@ import {
   deleteNote,
   getNote,
   listNotes,
+  recalculateNoteSchedule,
   updateNote,
 } from './notes.service.js'
 
@@ -59,6 +60,12 @@ export async function notesRoutes(app: FastifyInstance): Promise<void> {
       return reply.send(note)
     },
   )
+
+  app.post('/:id/recalculate', guard, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    const note = await recalculateNoteSchedule(request.user!.id, id)
+    return reply.send(note)
+  })
 
   app.delete('/:id', guard, async (request, reply) => {
     const { id } = request.params as { id: string }

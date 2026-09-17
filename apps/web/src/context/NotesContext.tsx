@@ -10,6 +10,8 @@ import {
 } from 'react'
 import * as calendarApi from '../lib/api/calendar.api'
 import { useApi } from '../lib/api/client'
+import * as dashboardApi from '../lib/api/dashboard.api'
+import type { DashboardSummary } from '../lib/api/dashboard.api'
 import * as evaluationsApi from '../lib/api/evaluations.api'
 import type { FeynmanEvaluationResponse } from '../lib/api/evaluations.api'
 import * as notesApi from '../lib/api/notes.api'
@@ -328,8 +330,23 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   })
 
   const [calendarLoading, setCalendarLoading] = useState(useApi)
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null)
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(useApi ? null : 'note-1')
+
+  const refreshDashboardSummary = useCallback(async () => {
+    if (!useApi || !isAuthenticated) {
+      setDashboardSummary(null)
+      return
+    }
+
+    try {
+      const summary = await dashboardApi.fetchDashboardSummary()
+      setDashboardSummary(summary)
+    } catch {
+      setDashboardSummary(null)
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!useApi || !isAuthenticated) {
@@ -410,6 +427,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => undefined)
   }, [isAuthenticated, notesLoading, notes])
+
+  useEffect(() => {
+    if (!useApi || !isAuthenticated || notesLoading) return
+    refreshDashboardSummary()
+  }, [isAuthenticated, notesLoading, notes.length, refreshDashboardSummary])
 
   // Save changes to localStorage (demo mode only)
   useEffect(() => {
@@ -632,9 +654,11 @@ export function NotesProvider({ children }: { children: ReactNode }) {
         completeness: result.completeness,
       })
 
+      await refreshDashboardSummary()
+
       return result
     },
-    [applyEvaluationToState],
+    [applyEvaluationToState, refreshDashboardSummary],
   )
 
   const recordPracticeSession = useCallback(
@@ -708,20 +732,24 @@ export function NotesProvider({ children }: { children: ReactNode }) {
 
   // Compute live averages for Dashboard
   const avgLectorScore = useMemo(() => {
+    if (useApi && dashboardSummary) return dashboardSummary.avgLectorScore
     if (explanations.length === 0) return 9.0
     const sum = explanations.reduce((acc, e) => acc + e.score, 0)
     return Number((sum / explanations.length).toFixed(2))
-  }, [explanations])
+  }, [dashboardSummary, explanations])
 
   const retentionAverage = useMemo(() => {
+    if (useApi && dashboardSummary) return dashboardSummary.retentionAverage
     if (notes.length === 0) return 85
     const sum = notes.reduce((acc, n) => acc + (n.retentionHealth || 85), 0)
     return Math.round(sum / notes.length)
-  }, [notes])
+  }, [dashboardSummary, notes])
 
   const totalSessionsToday = useMemo(() => {
-    return explanations.length
-  }, [explanations])
+    if (useApi && dashboardSummary) return dashboardSummary.totalSessionsToday
+    const today = new Date().toISOString().split('T')[0]
+    return explanations.filter((item) => item.timestamp.startsWith(today)).length
+  }, [dashboardSummary, explanations])
 
   const value = useMemo(
     () => ({

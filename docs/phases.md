@@ -597,11 +597,11 @@ Pure functions — fully unit-testable with table-driven tests.
 
 ### Tasks
 
-- [ ] Wire SM-2 update into evaluation pipeline (Phase 4 callback).
-- [ ] Update `Note` SM-2 fields + `nextReviewDate` + `retentionHealth` after each evaluation.
-- [ ] `recordPracticeSession` equivalent now lives server-side.
-- [ ] Dashboard aggregation via MongoDB aggregation pipeline (`$match`, `$group`, `$avg`).
-- [ ] `GET /dashboard/due-today` returns notes where `nextReviewDate <= today`.
+- [x] Wire SM-2 update into evaluation pipeline (Phase 4 callback).
+- [x] Update `Note` SM-2 fields + `nextReviewDate` + `retentionHealth` after each evaluation.
+- [x] `recordPracticeSession` equivalent now lives server-side.
+- [x] Dashboard aggregation via MongoDB aggregation pipeline (`$match`, `$group`, `$avg`).
+- [x] `GET /dashboard/due-today` returns notes where `nextReviewDate <= today`.
 
 ### Agile hooks
 
