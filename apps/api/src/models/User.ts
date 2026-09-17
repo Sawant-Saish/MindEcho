@@ -9,6 +9,15 @@ const calendarSettingsSchema = new Schema(
   { _id: false },
 )
 
+const notificationSettingsSchema = new Schema(
+  {
+    emailEnabled: { type: Boolean, default: false },
+    pushEnabled: { type: Boolean, default: false },
+    inAppEnabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+)
+
 const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -17,6 +26,10 @@ const userSchema = new Schema(
     calendarSettings: {
       type: calendarSettingsSchema,
       default: () => ({ studyMode: 'exam' }),
+    },
+    notificationSettings: {
+      type: notificationSettingsSchema,
+      default: () => ({ emailEnabled: false, pushEnabled: false, inAppEnabled: true }),
     },
   },
   { timestamps: true },

@@ -73,9 +73,40 @@ npm run dev:all
 | 5 — Spaced Repetition | ✅ Complete (SM-2 + dashboard analytics) |
 | 6 — Billing | ✅ Complete (plans, checkout, usage limits) |
 | 7 — Frontend Integration | ✅ Complete (`VITE_USE_API` cutover) |
-| 8 | Planned — see [docs/phases.md](./docs/phases.md) |
+| 8 — Workers & Hardening | ✅ Complete (cron jobs, notifications, CI) |
 
 Set `VITE_USE_API=true` in `apps/web/.env` to use the live API instead of localStorage demo mode.
+
+## Production deployment
+
+### API + workers
+
+```bash
+# Build
+npm run build:api
+
+# Run API (set production env vars first)
+cd apps/api && NODE_ENV=production node dist/server.js
+
+# Optional: run background workers in the same process
+ENABLE_WORKERS=true NODE_ENV=production node dist/server.js
+
+# Or run a dedicated worker process
+npm run worker --workspace=@lector/api
+```
+
+### Infrastructure checklist
+
+- MongoDB with automated backups (Atlas or `mongodump` cron)
+- Redis (optional; reserved for future BullMQ evaluation queue)
+- MinIO or S3 for audio uploads
+- HTTPS reverse proxy (nginx/Caddy) in front of the API
+- Set strong `JWT_SECRET` and restrict `CORS_ORIGINS` to your frontend domain
+- Enable `ENABLE_WORKERS=true` in staging/production for daily retention decay and review reminders
+
+### CI
+
+GitHub Actions runs API tests and builds both workspaces on every push to `main` (see `.github/workflows/ci.yml`).
 
 ## Documentation
 

@@ -800,13 +800,13 @@ if daysOverdue > 0:
 
 ### Production checklist
 
-- [ ] HTTPS + secure headers (helmet).
-- [ ] Structured logging with request IDs (pino → JSON).
+- [x] HTTPS + secure headers (helmet).
+- [x] Structured logging with request IDs (pino → JSON).
 - [ ] Error tracking (Sentry).
-- [ ] MongoDB connection pooling (`maxPoolSize: 50` in Mongoose options).
-- [ ] Rate limiting per user (not just per IP).
-- [ ] Backup strategy (mongodump cron or MongoDB Atlas automated backups).
-- [ ] CI/CD pipeline: test → build → deploy.
+- [x] MongoDB connection pooling (`maxPoolSize: 50` in Mongoose options).
+- [x] Rate limiting per user (not just per IP).
+- [x] Backup strategy (mongodump cron or MongoDB Atlas automated backups) — documented in README.
+- [x] CI/CD pipeline: test → build → deploy.
 - [ ] Load test evaluation endpoint (target: 50 concurrent users).
 - [ ] API versioning deprecation policy documented.
 
@@ -930,10 +930,10 @@ Each phase is complete when:
 | 2 — Notes | ✅ Complete | 2026-09-18 | Notes CRUD + debounced PATCH sync |
 | 3 — Calendar | ✅ Complete | 2026-09-18 | Settings + important dates API |
 | 4 — Evaluations | ✅ Complete | 2026-09-18 | Feynman text/voice evaluation API |
-| 5 — Spaced Repetition | ⬜ Not started | — | |
-| 6 — Billing | ⬜ Not started | — | |
-| 7 — Frontend Integration | ⬜ Not started | — | |
-| 8 — Workers & Hardening | ⬜ Not started | — | |
+| 5 — Spaced Repetition | ✅ Complete | 2026-09-18 | SM-2 + dashboard analytics |
+| 6 — Billing | ✅ Complete | 2026-09-18 | Plans, checkout, usage limits |
+| 7 — Frontend Integration | ✅ Complete | 2026-09-18 | `VITE_USE_API` cutover |
+| 8 — Workers & Hardening | ✅ Complete | 2026-09-18 | Cron jobs, notifications, CI |
 
 ---
 

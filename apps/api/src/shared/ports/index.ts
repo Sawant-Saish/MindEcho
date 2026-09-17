@@ -1,9 +1,11 @@
 import { env } from '../../config/env.js'
 import { MockLLMProvider } from './mock-llm-provider.js'
+import { MockNotificationProvider } from './mock-notification-provider.js'
 import { MockPaymentProvider } from './mock-payment-provider.js'
 import { StripePaymentProvider } from './stripe-payment-provider.js'
 import { MockSTTProvider } from './mock-stt-provider.js'
 import type { LLMProvider } from './llm-provider.js'
+import type { NotificationProvider } from './notification-provider.js'
 import type { PaymentProvider } from './payment-provider.js'
 import type { STTProvider } from './stt-provider.js'
 
@@ -25,6 +27,15 @@ export function createSTTProvider(): STTProvider {
   }
 }
 
+export function createNotificationProvider(): NotificationProvider {
+  switch (env.NOTIFICATION_PROVIDER) {
+    case 'mock':
+      return new MockNotificationProvider()
+    default:
+      throw new Error(`Notification provider "${env.NOTIFICATION_PROVIDER}" not configured yet (Phase 8)`)
+  }
+}
+
 export function createPaymentProvider(): PaymentProvider {
   switch (env.PAYMENT_PROVIDER) {
     case 'mock':
@@ -38,4 +49,5 @@ export function createPaymentProvider(): PaymentProvider {
 
 export type { LLMProvider, FeynmanEvaluationResult } from './llm-provider.js'
 export type { STTProvider } from './stt-provider.js'
+export type { NotificationProvider, NotificationPayload } from './notification-provider.js'
 export type { PaymentProvider, CheckoutResult } from './payment-provider.js'

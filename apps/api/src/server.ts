@@ -1,11 +1,18 @@
 import { buildApp } from './app.js'
 import { env } from './config/env.js'
 import { connectDatabase } from './db/connection.js'
+import { startWorkerScheduler } from './workers/scheduler.js'
 
 async function start(): Promise<void> {
   await connectDatabase()
 
   const app = await buildApp()
+
+  let workerScheduler: ReturnType<typeof startWorkerScheduler> | undefined
+
+  if (env.ENABLE_WORKERS) {
+    workerScheduler = startWorkerScheduler(app.log)
+  }
 
   try {
     await app.listen({ port: env.PORT, host: env.HOST })
@@ -18,6 +25,7 @@ async function start(): Promise<void> {
 
   const shutdown = async (signal: string) => {
     app.log.info(`Received ${signal}, shutting down...`)
+    workerScheduler?.stop()
     await app.close()
     process.exit(0)
   }

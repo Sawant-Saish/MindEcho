@@ -30,6 +30,11 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  ENABLE_WORKERS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  NOTIFICATION_PROVIDER: z.enum(['mock', 'email']).default('mock'),
 })
 
 const parsed = envSchema.safeParse(process.env)

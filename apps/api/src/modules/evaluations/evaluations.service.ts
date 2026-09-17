@@ -12,6 +12,7 @@ import {
   assertCanEvaluate,
   recordEvaluationUsage,
 } from '../billing/usage-policy.service.js'
+import { domainEvents } from '../../shared/events/domain-events.js'
 import type { FeynmanEvaluationResponse } from './evaluations.schemas.js'
 import { serializeEvaluationDetail } from './evaluations.serializer.js'
 
@@ -145,6 +146,13 @@ export async function submitFeynmanEvaluation(
   })
 
   await recordEvaluationUsage(publicUserId)
+
+  domainEvents.emit('EvaluationCompleted', {
+    userId: publicUserId,
+    noteId: toPublicNoteId(note._id),
+    evaluationId: toPublicEvalId(evaluation._id),
+    mode: input.mode,
+  })
 
   return {
     evaluationId: toPublicEvalId(evaluation._id),
