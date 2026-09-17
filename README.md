@@ -68,7 +68,8 @@ npm run dev:all
 | 1 — Auth | ✅ Complete (JWT register/login/refresh) |
 | 2 — Notes | ✅ Complete (CRUD + API integration) |
 | 3 — Calendar | ✅ Complete (settings + important dates) |
-| 4 — Evaluations | 🔜 Next |
+| 4 — Evaluations | ✅ Complete (Feynman text/voice + mock LLM/STT) |
+| 5 — Spaced Repetition | 🔜 Next |
 | 4–8 | Planned — see [docs/phases.md](./docs/phases.md) |
 
 ## Documentation

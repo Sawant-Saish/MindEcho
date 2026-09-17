@@ -929,7 +929,7 @@ Each phase is complete when:
 | 1 — Authentication | ✅ Complete | 2026-09-18 | JWT register/login/refresh/me |
 | 2 — Notes | ✅ Complete | 2026-09-18 | Notes CRUD + debounced PATCH sync |
 | 3 — Calendar | ✅ Complete | 2026-09-18 | Settings + important dates API |
-| 4 — Evaluations | ⬜ Not started | — | |
+| 4 — Evaluations | ✅ Complete | 2026-09-18 | Feynman text/voice evaluation API |
 | 5 — Spaced Repetition | ⬜ Not started | — | |
 | 6 — Billing | ⬜ Not started | — | |
 | 7 — Frontend Integration | ⬜ Not started | — | |

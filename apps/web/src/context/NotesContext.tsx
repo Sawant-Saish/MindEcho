@@ -10,6 +10,8 @@ import {
 } from 'react'
 import * as calendarApi from '../lib/api/calendar.api'
 import { useApi } from '../lib/api/client'
+import * as evaluationsApi from '../lib/api/evaluations.api'
+import type { FeynmanEvaluationResponse } from '../lib/api/evaluations.api'
 import * as notesApi from '../lib/api/notes.api'
 import { useAuth } from './AuthContext'
 
@@ -75,8 +77,15 @@ interface NotesContextValue {
     correctness: number,
     clarity: number,
     completeness: number,
-    mode: 'voice' | 'text'
+    mode: 'voice' | 'text',
   ) => void
+  submitFeynmanEvaluation: (input: {
+    noteId: string
+    mode: 'voice' | 'text'
+    explanationText?: string
+    audioBlob?: Blob
+    selfRating?: number
+  }) => Promise<FeynmanEvaluationResponse>
   addImportantDate: (item: Omit<ImportantDateItem, 'id'>) => Promise<void>
   deleteImportantDate: (id: string) => Promise<void>
   avgLectorScore: number
@@ -375,6 +384,33 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       .finally(() => setCalendarLoading(false))
   }, [isAuthenticated])
 
+  useEffect(() => {
+    if (!useApi || !isAuthenticated || notesLoading) return
+
+    evaluationsApi
+      .listEvaluations()
+      .then((items) => {
+        setExplanations(
+          items.map((item) => {
+            const note = notes.find((n) => n.id === item.noteId)
+            return {
+              id: item.id,
+              noteId: item.noteId,
+              topic: note?.title ?? 'Practice Session',
+              subject: note?.subject ?? 'General',
+              score: item.lectorScore,
+              correctness: item.correctness,
+              clarity: item.clarity,
+              completeness: item.completeness,
+              mode: item.mode,
+              timestamp: item.createdAt.replace('T', ' ').slice(0, 16),
+            }
+          }),
+        )
+      })
+      .catch(() => undefined)
+  }, [isAuthenticated, notesLoading, notes])
+
   // Save changes to localStorage (demo mode only)
   useEffect(() => {
     if (useApi) return
@@ -522,7 +558,85 @@ export function NotesProvider({ children }: { children: ReactNode }) {
     setImportantDates((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  // Record practice session & update scores in dashboard
+  const applyEvaluationToState = useCallback(
+    (
+      noteId: string,
+      result: FeynmanEvaluationResponse,
+      mode: 'voice' | 'text',
+      scores: { correctness: number; clarity: number; completeness: number },
+    ) => {
+      const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16)
+      const targetNote = notes.find((n) => n.id === noteId)
+      const topicName = targetNote ? targetNote.title : 'Custom Practice'
+      const subjectName = targetNote ? targetNote.subject : 'General'
+
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === noteId
+            ? {
+                ...n,
+                lectorScore: result.lectorScore,
+                practiceCount: result.updatedNoteState.practiceCount,
+                lastPracticed: result.updatedNoteState.lastPracticed,
+                retentionHealth: result.updatedNoteState.retentionHealth,
+                nextReviewDate: result.updatedNoteState.nextReviewDate,
+                updatedAt: result.updatedNoteState.lastPracticed,
+              }
+            : n,
+        ),
+      )
+
+      setExplanations((prev) => [
+        {
+          id: result.evaluationId,
+          noteId,
+          topic: topicName,
+          subject: subjectName,
+          score: result.lectorScore,
+          correctness: scores.correctness,
+          clarity: scores.clarity,
+          completeness: scores.completeness,
+          mode,
+          timestamp: nowStr,
+        },
+        ...prev,
+      ])
+    },
+    [notes],
+  )
+
+  const submitFeynmanEvaluation = useCallback(
+    async (input: {
+      noteId: string
+      mode: 'voice' | 'text'
+      explanationText?: string
+      audioBlob?: Blob
+      selfRating?: number
+    }) => {
+      const result =
+        input.mode === 'voice' && input.audioBlob
+          ? await evaluationsApi.submitVoiceEvaluation({
+              noteId: input.noteId,
+              audioBlob: input.audioBlob,
+              selfRating: input.selfRating,
+            })
+          : await evaluationsApi.submitTextEvaluation({
+              noteId: input.noteId,
+              explanationText: input.explanationText ?? '',
+              selfRating: input.selfRating,
+            })
+
+      applyEvaluationToState(input.noteId, result, input.mode, {
+        correctness: result.correctness,
+        clarity: result.clarity,
+        completeness: result.completeness,
+      })
+
+      return result
+    },
+    [applyEvaluationToState],
+  )
+
   const recordPracticeSession = useCallback(
     (
       noteId: string,
@@ -626,6 +740,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       updateNote,
       deleteNote,
       recordPracticeSession,
+      submitFeynmanEvaluation,
       addImportantDate,
       deleteImportantDate,
       avgLectorScore,
@@ -647,6 +762,7 @@ export function NotesProvider({ children }: { children: ReactNode }) {
       updateNote,
       deleteNote,
       recordPracticeSession,
+      submitFeynmanEvaluation,
       addImportantDate,
       deleteImportantDate,
       avgLectorScore,

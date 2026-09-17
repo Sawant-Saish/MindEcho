@@ -1,3 +1,4 @@
+export { Evaluation, type EvaluationDocument } from './Evaluation.js'
 export { ImportantDate, type ImportantDateDocument } from './ImportantDate.js'
 export { Note, type NoteDocument } from './Note.js'
 export { RefreshToken, type RefreshTokenDocument } from './RefreshToken.js'

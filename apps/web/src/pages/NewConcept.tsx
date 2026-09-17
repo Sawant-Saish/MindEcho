@@ -16,12 +16,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { GlassCard } from '../components/GlassCard'
 import { Navbar } from '../components/Navbar'
 import { ShinyButton } from '../components/ui/shiny-button'
+import { useApi } from '../lib/api/client'
 import { useAuth } from '../context/AuthContext'
 import { useNotes } from '../context/NotesContext'
 
 export function NewConcept() {
   const { isAuthenticated } = useAuth()
-  const { notes, recordPracticeSession } = useNotes()
+  const { notes, recordPracticeSession, submitFeynmanEvaluation } = useNotes()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -44,12 +45,20 @@ export function NewConcept() {
     correctness: number
     clarity: number
     completeness: number
+    feedback?: {
+      strengths: string[]
+      missingConcepts: string[]
+      improvementTip: string
+    }
+    nextReviewDate?: string
   }>({
     score: 9.2,
     correctness: 94,
     clarity: 90,
     completeness: 92,
   })
+  const [isEvaluating, setIsEvaluating] = useState(false)
+  const [evalError, setEvalError] = useState('')
 
   // Check URL query parameters for pre-selected note
   useEffect(() => {
@@ -184,7 +193,7 @@ export function NewConcept() {
   }
 
   // Step 2 Submit -> Proceed to Evaluation & Record Session to Dashboard
-  const handleSubmitExplanation = () => {
+  const handleSubmitExplanation = async () => {
     if (inputMode === 'voice' && !audioUrl && recordingTime === 0) {
       alert('Please record your voice explanation or switch to text mode.')
       return
@@ -193,19 +202,59 @@ export function NewConcept() {
       alert('Please enter your written explanation.')
       return
     }
+    if (!selectedNoteId) {
+      alert('Please select a note to evaluate against.')
+      return
+    }
 
-    // Evaluate response with randomized realistic high marks for LECTOR score
-    const correctness = Math.floor(Math.random() * 8) + 90 // 90-97%
-    const clarity = Math.floor(Math.random() * 8) + 88 // 88-95%
-    const completeness = Math.floor(Math.random() * 8) + 89 // 89-96%
-    const score = Number((correctness * 0.05 + clarity * 0.03 + completeness * 0.02).toFixed(1))
+    setEvalError('')
+    setIsEvaluating(true)
 
-    setEvalResult({ score, correctness, clarity, completeness })
+    try {
+      if (useApi) {
+        const audioBlob =
+          inputMode === 'voice' && audioUrl
+            ? await fetch(audioUrl).then((response) => response.blob())
+            : undefined
 
-    // Save session in NotesContext (this updates dashboard live!)
-    recordPracticeSession(selectedNoteId, score, correctness, clarity, completeness, inputMode)
+        const result = await submitFeynmanEvaluation({
+          noteId: selectedNoteId,
+          mode: inputMode,
+          explanationText: inputMode === 'text' ? textExplanation : undefined,
+          audioBlob,
+        })
 
-    setStep(3)
+        setEvalResult({
+          score: result.lectorScore,
+          correctness: result.correctness,
+          clarity: result.clarity,
+          completeness: result.completeness,
+          feedback: result.feedback,
+          nextReviewDate: result.updatedNoteState.nextReviewDate,
+        })
+      } else {
+        const correctness = Math.floor(Math.random() * 8) + 90
+        const clarity = Math.floor(Math.random() * 8) + 88
+        const completeness = Math.floor(Math.random() * 8) + 89
+        const score = Number((correctness * 0.05 + clarity * 0.03 + completeness * 0.02).toFixed(1))
+
+        setEvalResult({ score, correctness, clarity, completeness })
+        recordPracticeSession(
+          selectedNoteId,
+          score,
+          correctness,
+          clarity,
+          completeness,
+          inputMode,
+        )
+      }
+
+      setStep(3)
+    } catch {
+      setEvalError('LECTOR evaluation failed. Please try again.')
+    } finally {
+      setIsEvaluating(false)
+    }
   }
 
   return (
@@ -567,6 +616,10 @@ export function NewConcept() {
                 </div>
               )}
 
+              {evalError && (
+                <p className="mt-4 text-center text-sm text-red-300">{evalError}</p>
+              )}
+
               <div className="mt-8 flex justify-between items-center border-t border-white/10 pt-6">
                 <button
                   type="button"
@@ -577,8 +630,8 @@ export function NewConcept() {
                 </button>
 
                 <ShinyButton
-                  label="Submit for LECTOR AI Evaluation →"
-                  onClick={handleSubmitExplanation}
+                  label={isEvaluating ? 'LECTOR is evaluating…' : 'Submit for LECTOR AI Evaluation →'}
+                  onClick={() => void handleSubmitExplanation()}
                   accentColor="#e8c89b"
                   accentSoftColor="#f5efe8"
                   fillColor="#2b2421"
@@ -644,18 +697,32 @@ export function NewConcept() {
                   LECTOR AI Feedback Summary:
                 </h3>
                 <ul className="space-y-2 text-xs leading-relaxed text-[#f5efe8]/80">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-400 shrink-0" />
-                    <span>Great job explaining the core mechanism and time complexity trade-offs clearly.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-400 shrink-0" />
-                    <span>Your vocal confidence and terminology usage were well-structured.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Clock className="mt-0.5 h-4 w-4 text-[#e8c89b] shrink-0" />
-                    <span>Next Review Scheduled in <strong>3 Days (Sept 20, 2026)</strong> based on your memory curve.</span>
-                  </li>
+                  {(evalResult.feedback?.strengths ?? ['Strong explanation effort detected.']).map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-400 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                  {(evalResult.feedback?.missingConcepts ?? []).map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <Clock className="mt-0.5 h-4 w-4 text-amber-400 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                  {evalResult.feedback?.improvementTip && (
+                    <li className="flex items-start gap-2">
+                      <Sparkles className="mt-0.5 h-4 w-4 text-[#e8c89b] shrink-0" />
+                      <span>{evalResult.feedback.improvementTip}</span>
+                    </li>
+                  )}
+                  {evalResult.nextReviewDate && (
+                    <li className="flex items-start gap-2">
+                      <Clock className="mt-0.5 h-4 w-4 text-[#e8c89b] shrink-0" />
+                      <span>
+                        Next review scheduled for <strong>{evalResult.nextReviewDate}</strong> based on your memory curve.
+                      </span>
+                    </li>
+                  )}
                 </ul>
               </div>
 

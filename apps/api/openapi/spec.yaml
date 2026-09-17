@@ -151,13 +151,39 @@ paths:
   /api/v1/evaluations/feynman:
     post:
       tags: [Evaluations]
-      summary: Feynman voice/text evaluation (Phase 4)
+      summary: Feynman voice/text evaluation
       security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [noteId, explanationText]
+              properties:
+                noteId: { type: string }
+                explanationText: { type: string }
+                selfRating: { type: number }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [noteId]
+              properties:
+                noteId: { type: string }
+                explanationText: { type: string }
+                selfRating: { type: number }
+                audioFile: { type: string, format: binary }
       responses:
         '200':
           description: Evaluation result
-        '501':
-          description: Not implemented yet
+  /api/v1/evaluations:
+    get:
+      tags: [Evaluations]
+      summary: List evaluation history
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
   /api/v1/calendar/settings:
     get:
       tags: [Calendar]
